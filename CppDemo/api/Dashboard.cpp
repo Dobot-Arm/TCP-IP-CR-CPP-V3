@@ -62,11 +62,7 @@ std::string CDashboard::EnableRobot(double load, double centerX, double centerY,
 std::string CDashboard::DisableRobot()
 {
     std::string str = "DisableRobot()";
-    if (!SendData(str)) {
-        return str + ":send error";
-    }
-
-    return WaitReply(20000);
+    return SendRecvMsg(str, 20000);
 }
 
 std::string CDashboard::ResetRobot()

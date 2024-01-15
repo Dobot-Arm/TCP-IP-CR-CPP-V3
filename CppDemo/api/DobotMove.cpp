@@ -116,10 +116,7 @@ std::string CDobotMove::ServoJS(const CJointPoint& pt)
     std::ostringstream oss;
     oss << "ServoJS(" << pt.j1 << ',' << pt.j2 << ',' << pt.j3 << ',' << pt.j4 << ',' << pt.j5 << ',' << pt.j6 << ')';
     std::string str = oss.str();
-    if (!SendData(str)) {
-        return str + ":send error";
-    }
-    return WaitReply(5000);
+    return SendRecvMsg(str);
 }
 
 std::string CDobotMove::Circle3(const CDescartesPoint& pt, const CDescartesPoint& pt2, int count)
@@ -135,10 +132,7 @@ std::string CDobotMove::Circle3(const CDescartesPoint& pt, const CDescartesPoint
 std::string CDobotMove::Sync()
 {
     std::string str = "Sync()";
-    if (!SendData(str)) {
-        return str + ":send error";
-    }
-    return WaitReply(5000);
+    return SendRecvMsg(str);
 }
 
 std::string CDobotMove::RelMovJUser(const CDescartesPoint& pt, int User)
@@ -188,27 +182,18 @@ std::string CDobotMove::RelJointMovJ(const CDescartesPoint& pt)
 std::string CDobotMove::wait()
 {
     std::string str = "wait()";
-    if (!SendData(str)) {
-        return str + ":send error";
-    }
-    return WaitReply(5000);
+    return SendRecvMsg(str);
 }
 
 std::string CDobotMove::pause()
 {
     std::string str = "pause()";
-    if (!SendData(str)) {
-        return str + ":send error";
-    }
-    return WaitReply(5000);
+    return SendRecvMsg(str);
 }
 
 std::string CDobotMove::Continue()
 {
     std::string str = "continue()";
-    if (!SendData(str)) {
-        return str + ":send error";
-    }
-    return WaitReply(5000);
+    return SendRecvMsg(str);
 }
 }    // namespace Dobot
