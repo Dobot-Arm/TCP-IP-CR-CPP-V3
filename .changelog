@@ -1,3 +1,5 @@
+1/18     更新Form.cpp  DigitalOutputs替换为DO指令
+
 1/15   1.增加changelog  
        2.删除多余指令MovJExt,SyncAll  
        3.新增ServoJS功能指令, 增加ServoJ可选参数适配   

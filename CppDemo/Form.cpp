@@ -8,9 +8,7 @@
 
 #include "api/ErrorInfoHelper.h"
 
-Form::Form(QWidget *parent)
-    : QWidget(parent)
-    , ui(new Ui::Form)
+Form::Form(QWidget *parent) : QWidget(parent), ui(new Ui::Form)
 {
     ui->setupUi(this);
 
@@ -20,28 +18,26 @@ Form::Form(QWidget *parent)
     m_pTimerReader->setInterval(100);
     connect(m_pTimerReader, &QTimer::timeout, this, &Form::slotTimeoutReadFeedback);
 
-    connect(this, &Form::signalPrintLog, this, [this](QString str){
+    connect(this, &Form::signalPrintLog, this, [this](QString str)
+            {
         static int iLineCount = 0;
-        if (iLineCount > 50)
-        {
+        if (iLineCount > 50) {
             iLineCount = 0;
             ui->textEditLog->clear();
         }
         ++iLineCount;
-        ui->textEditLog->append(str);
-    });
-    connect(this, &Form::signalSetBtnText, this, [](QPushButton* pBtn, QString strTxt){
-        pBtn->setText(strTxt);
-    });
-    connect(this, &Form::signalConnectState, this, [this](bool bConnected){
+        ui->textEditLog->append(str); });
+    connect(this, &Form::signalSetBtnText, this, [](QPushButton *pBtn, QString strTxt)
+            { pBtn->setText(strTxt); });
+    connect(this, &Form::signalConnectState, this, [this](bool bConnected)
+            {
         ui->boxDashboard->setEnabled(bConnected);
         ui->boxMoveFunction->setEnabled(bConnected);
         ui->boxFeedback->setEnabled(bConnected);
         if (bConnected)
             m_pTimerReader->start();
         else
-            m_pTimerReader->stop();
-    });
+            m_pTimerReader->stop(); });
 
     connect(ui->btn6AxisJ1M, &QPushButton::pressed, this, &Form::slotOnBtnMoveJog);
     connect(ui->btn6AxisJ1M, &QPushButton::released, this, &Form::slotOnBtnStopMoveJog);
@@ -100,7 +96,7 @@ Form::Form(QWidget *parent)
     ui->boxFeedback->setEnabled(false);
 
     QString strPath = qApp->applicationDirPath() + QDir::separator();
-    CErrorInfoHelper::ParseControllerJsonFile(QString(strPath+ "alarm_controller.json").toStdString());
+    CErrorInfoHelper::ParseControllerJsonFile(QString(strPath + "alarm_controller.json").toStdString());
     CErrorInfoHelper::ParseServoJsonFile(QString(strPath + "alarm_servo.json").toStdString());
 }
 
@@ -118,7 +114,7 @@ void Form::PrintLog(QString strLog)
 
 void Form::on_btnConnect_clicked()
 {
-    if (ui->btnConnect->text().compare("Disconnect")==0)
+    if (ui->btnConnect->text().compare("Disconnect") == 0)
     {
         Disconnect();
         return;
@@ -134,113 +130,105 @@ void Form::Connect()
     unsigned short iPortFeedback = ui->lineEditFeedbackPort->text().toUShort();
 
     PrintLog("Connecting...");
-    std::thread thd([=]{
-        if (!m_Dashboard.Connect(strIp.toStdString(), iPortDashboard))
-        {
+    std::thread thd([=]
+                    {
+        if (!m_Dashboard.Connect(strIp.toStdString(), iPortDashboard)) {
             PrintLog(QString::asprintf("Connect %s:%hu Fail!!", strIp.toStdString().c_str(), iPortDashboard));
             return;
         }
-        if (!m_DobotMove.Connect(strIp.toStdString(), iPortMove))
-        {
+        if (!m_DobotMove.Connect(strIp.toStdString(), iPortMove)) {
             PrintLog(QString::asprintf("Connect %s:%hu Fail!!", strIp.toStdString().c_str(), iPortMove));
             return;
         }
-        if (!m_Feedback.Connect(strIp.toStdString(), iPortFeedback))
-        {
+        if (!m_Feedback.Connect(strIp.toStdString(), iPortFeedback)) {
             PrintLog(QString::asprintf("Connect %s:%hu Fail!!", strIp.toStdString().c_str(), iPortFeedback));
             return;
         }
         PrintLog("Connect Success!!!");
 
-        emit signalSetBtnText(ui->btnConnect,QString("Disconnect"));
-        emit signalConnectState(true);
-    });
+        emit signalSetBtnText(ui->btnConnect, QString("Disconnect"));
+        emit signalConnectState(true); });
     thd.detach();
 }
 
 void Form::Disconnect()
 {
-    std::thread thd([this]{
+    std::thread thd([this]
+                    {
         emit signalConnectState(false);
         m_Feedback.Disconnect();
         m_DobotMove.Disconnect();
         m_Dashboard.Disconnect();
         PrintLog("Disconnect success!!!");
-        emit signalSetBtnText(ui->btnConnect,QString("Connect"));
-    });
+        emit signalSetBtnText(ui->btnConnect, QString("Connect")); });
     thd.detach();
 }
 
 void Form::on_btnEnable_clicked()
 {
-    bool bEnable = ui->btnEnable->text().compare("Enable")==0;
-    PrintLog(QString::asprintf("send to %s:%hu: %s()", m_Dashboard.GetIp().c_str(),
-                               m_Dashboard.GetPort(), bEnable? "EnableRobot" : "DisableRobot"));
-    std::thread thd([=]{
+    bool bEnable = ui->btnEnable->text().compare("Enable") == 0;
+    PrintLog(QString::asprintf("send to %s:%hu: %s()", m_Dashboard.GetIp().c_str(), m_Dashboard.GetPort(),
+                               bEnable ? "EnableRobot" : "DisableRobot"));
+    std::thread thd([=]
+                    {
         std::string ret = bEnable ? m_Dashboard.EnableRobot() : m_Dashboard.DisableRobot();
-        bool bOk = ret.find("0")==0;
-        if (bOk)
-        {
-            emit signalSetBtnText(ui->btnEnable,QString(bEnable?"Disable":"Enable"));
+        bool bOk = ret.find("0") == 0;
+        if (bOk) {
+            emit signalSetBtnText(ui->btnEnable, QString(bEnable ? "Disable" : "Enable"));
         }
-        PrintLog(QString::asprintf("Receive From %s:%hu: %s", m_Dashboard.GetIp().c_str(),
-                                   m_Dashboard.GetPort(), ret.c_str()));
-    });
+        PrintLog(QString::asprintf("Receive From %s:%hu: %s", m_Dashboard.GetIp().c_str(), m_Dashboard.GetPort(),
+                                   ret.c_str())); });
     thd.detach();
 }
-
 
 void Form::on_btnReset_clicked()
 {
     PrintLog(QString::asprintf("send to %s:%hu: ResetRobot()", m_Dashboard.GetIp().c_str(), m_Dashboard.GetPort()));
-    std::thread thd([this]{
+    std::thread thd([this]
+                    {
         std::string ret = m_Dashboard.ResetRobot();
-        PrintLog(QString::asprintf("Receive From %s:%hu: %s", m_Dashboard.GetIp().c_str(),
-                                   m_Dashboard.GetPort(), ret.c_str()));
-    });
+        PrintLog(QString::asprintf("Receive From %s:%hu: %s", m_Dashboard.GetIp().c_str(), m_Dashboard.GetPort(),
+                                   ret.c_str())); });
     thd.detach();
 }
-
 
 void Form::on_clearError_clicked()
 {
     PrintLog(QString::asprintf("send to %s:%hu: ClearError()", m_Dashboard.GetIp().c_str(), m_Dashboard.GetPort()));
-    std::thread thd([this]{
+    std::thread thd([this]
+                    {
         std::string ret = m_Dashboard.ClearError();
-        PrintLog(QString::asprintf("Receive From %s:%hu: %s", m_Dashboard.GetIp().c_str(),
-                                   m_Dashboard.GetPort(), ret.c_str()));
-    });
+        PrintLog(QString::asprintf("Receive From %s:%hu: %s", m_Dashboard.GetIp().c_str(), m_Dashboard.GetPort(),
+                                   ret.c_str())); });
     thd.detach();
 }
-
 
 void Form::on_btnConfirmSpeed_clicked()
 {
     int iValue = ui->spinBox->value();
-    PrintLog(QString::asprintf("send to %s:%hu: SpeedFactor(%d)", m_Dashboard.GetIp().c_str(), m_Dashboard.GetPort(),iValue));
-    std::thread thd([=]{
+    PrintLog(QString::asprintf("send to %s:%hu: SpeedFactor(%d)", m_Dashboard.GetIp().c_str(), m_Dashboard.GetPort(),
+                               iValue));
+    std::thread thd([=]
+                    {
         std::string ret = m_Dashboard.SpeedFactor(iValue);
-        PrintLog(QString::asprintf("Receive From %s:%hu: %s", m_Dashboard.GetIp().c_str(),
-                                   m_Dashboard.GetPort(), ret.c_str()));
-    });
+        PrintLog(QString::asprintf("Receive From %s:%hu: %s", m_Dashboard.GetIp().c_str(), m_Dashboard.GetPort(),
+                                   ret.c_str())); });
     thd.detach();
 }
-
 
 void Form::on_btnConfirmDO_clicked()
 {
     int idx = ui->editIndex->text().toInt();
-    bool bIsOn = ui->comboBoxStatus->currentText().compare("ON",Qt::CaseInsensitive)==0;
-    PrintLog(QString::asprintf("send to %s:%hu: DigitalOutputs(%d,%s)", m_Dashboard.GetIp().c_str(),
-                               m_Dashboard.GetPort(),idx,bIsOn?"on":"off"));
-    std::thread thd([=]{
-        std::string ret = m_Dashboard.DigitalOutputs(idx, bIsOn);
-        PrintLog(QString::asprintf("Receive From %s:%hu: %s", m_Dashboard.GetIp().c_str(),
-                                   m_Dashboard.GetPort(), ret.c_str()));
-    });
+    bool bIsOn = ui->comboBoxStatus->currentText().compare("ON", Qt::CaseInsensitive) == 0;
+    PrintLog(QString::asprintf("send to %s:%hu: DO(%d,%s)", m_Dashboard.GetIp().c_str(), m_Dashboard.GetPort(), idx,
+                               bIsOn ? "on" : "off"));
+    std::thread thd([=]
+                    {
+        std::string ret = m_Dashboard.DO(idx, bIsOn);
+        PrintLog(QString::asprintf("Receive From %s:%hu: %s", m_Dashboard.GetIp().c_str(), m_Dashboard.GetPort(),
+                                   ret.c_str())); });
     thd.detach();
 }
-
 
 void Form::on_btnMovJ_clicked()
 {
@@ -252,16 +240,15 @@ void Form::on_btnMovJ_clicked()
     pt.ry = ui->lineEditRY->text().toDouble();
     pt.rz = ui->lineEditRZ->text().toDouble();
 
-    PrintLog(QString::asprintf("send to %s:%hu: MovJ(%s)", m_DobotMove.GetIp().c_str(),
-                               m_DobotMove.GetPort(),pt.ToString().c_str()));
-    std::thread thd([=]{
+    PrintLog(QString::asprintf("send to %s:%hu: MovJ(%s)", m_DobotMove.GetIp().c_str(), m_DobotMove.GetPort(),
+                               pt.ToString().c_str()));
+    std::thread thd([=]
+                    {
         std::string ret = m_DobotMove.MovJ(pt);
-        PrintLog(QString::asprintf("Receive From %s:%hu: %s", m_DobotMove.GetIp().c_str(),
-                                   m_DobotMove.GetPort(), ret.c_str()));
-    });
+        PrintLog(QString::asprintf("Receive From %s:%hu: %s", m_DobotMove.GetIp().c_str(), m_DobotMove.GetPort(),
+                                   ret.c_str())); });
     thd.detach();
 }
-
 
 void Form::on_btnMovL_clicked()
 {
@@ -273,16 +260,15 @@ void Form::on_btnMovL_clicked()
     pt.ry = ui->lineEditRY->text().toDouble();
     pt.rz = ui->lineEditRZ->text().toDouble();
 
-    PrintLog(QString::asprintf("send to %s:%hu: MovL(%s)", m_DobotMove.GetIp().c_str(),
-                               m_DobotMove.GetPort(),pt.ToString().c_str()));
-    std::thread thd([=]{
+    PrintLog(QString::asprintf("send to %s:%hu: MovL(%s)", m_DobotMove.GetIp().c_str(), m_DobotMove.GetPort(),
+                               pt.ToString().c_str()));
+    std::thread thd([=]
+                    {
         std::string ret = m_DobotMove.MovL(pt);
-        PrintLog(QString::asprintf("Receive From %s:%hu: %s", m_DobotMove.GetIp().c_str(),
-                                   m_DobotMove.GetPort(), ret.c_str()));
-    });
+        PrintLog(QString::asprintf("Receive From %s:%hu: %s", m_DobotMove.GetIp().c_str(), m_DobotMove.GetPort(),
+                                   ret.c_str())); });
     thd.detach();
 }
-
 
 void Form::on_btnJointMovJ_clicked()
 {
@@ -294,51 +280,52 @@ void Form::on_btnJointMovJ_clicked()
     pt.j5 = ui->lineEditJ5->text().toDouble();
     pt.j6 = ui->lineEditJ6->text().toDouble();
 
-    PrintLog(QString::asprintf("send to %s:%hu: JointMovJ(%s)", m_DobotMove.GetIp().c_str(),
-                               m_DobotMove.GetPort(),pt.ToString().c_str()));
-    std::thread thd([=]{
+    PrintLog(QString::asprintf("send to %s:%hu: JointMovJ(%s)", m_DobotMove.GetIp().c_str(), m_DobotMove.GetPort(),
+                               pt.ToString().c_str()));
+    std::thread thd([=]
+                    {
         std::string ret = m_DobotMove.JointMovJ(pt);
-        PrintLog(QString::asprintf("Receive From %s:%hu: %s", m_DobotMove.GetIp().c_str(),
-                                   m_DobotMove.GetPort(), ret.c_str()));
-    });
+        PrintLog(QString::asprintf("Receive From %s:%hu: %s", m_DobotMove.GetIp().c_str(), m_DobotMove.GetPort(),
+                                   ret.c_str())); });
     thd.detach();
 }
 
 void Form::slotOnBtnMoveJog()
 {
-    QPushButton* pBtn = qobject_cast<QPushButton*>(sender());
-    if (!pBtn) return;
+    QPushButton *pBtn = qobject_cast<QPushButton *>(sender());
+    if (!pBtn)
+        return;
     DoMoveJog(pBtn->text());
 }
 
 void Form::slotOnBtnStopMoveJog()
 {
-    QPushButton* pBtn = qobject_cast<QPushButton*>(sender());
-    if (!pBtn) return;
+    QPushButton *pBtn = qobject_cast<QPushButton *>(sender());
+    if (!pBtn)
+        return;
     DoStopMoveJog();
 }
 
 void Form::DoMoveJog(QString str)
 {
-    PrintLog(QString::asprintf("send to %s:%hu: MoveJog(%s)", m_DobotMove.GetIp().c_str(),
-                               m_DobotMove.GetPort(),str.toStdString().c_str()));
-    std::thread thd([=]{
+    PrintLog(QString::asprintf("send to %s:%hu: MoveJog(%s)", m_DobotMove.GetIp().c_str(), m_DobotMove.GetPort(),
+                               str.toStdString().c_str()));
+    std::thread thd([=]
+                    {
         std::string ret = m_DobotMove.MoveJog(str.toStdString());
-        PrintLog(QString::asprintf("Receive From %s:%hu: %s", m_DobotMove.GetIp().c_str(),
-                                   m_DobotMove.GetPort(), ret.c_str()));
-    });
+        PrintLog(QString::asprintf("Receive From %s:%hu: %s", m_DobotMove.GetIp().c_str(), m_DobotMove.GetPort(),
+                                   ret.c_str())); });
     thd.detach();
 }
 
 void Form::DoStopMoveJog()
 {
-    PrintLog(QString::asprintf("send to %s:%hu: MoveJog()", m_DobotMove.GetIp().c_str(),
-                               m_DobotMove.GetPort()));
-    std::thread thd([=]{
+    PrintLog(QString::asprintf("send to %s:%hu: MoveJog()", m_DobotMove.GetIp().c_str(), m_DobotMove.GetPort()));
+    std::thread thd([=]
+                    {
         std::string ret = m_DobotMove.MoveJog("");
-        PrintLog(QString::asprintf("Receive From %s:%hu: %s", m_DobotMove.GetIp().c_str(),
-                                   m_DobotMove.GetPort(), ret.c_str()));
-    });
+        PrintLog(QString::asprintf("Receive From %s:%hu: %s", m_DobotMove.GetIp().c_str(), m_DobotMove.GetPort(),
+                                   ret.c_str())); });
     thd.detach();
 }
 
@@ -354,7 +341,8 @@ void Form::slotTimeoutReadFeedback()
 
 void Form::ShowDataResult()
 {
-    ui->labCurrentSpeedRatio->setText(QString::asprintf("Current Speed Ratio:%.2f%%",m_Feedback.GetFeedbackData().SpeedScaling));
+    ui->labCurrentSpeedRatio->setText(
+        QString::asprintf("Current Speed Ratio:%.2f%%", m_Feedback.GetFeedbackData().SpeedScaling));
     ui->labRobotMode->setText(QString::asprintf("Robot Mode:%s", m_Feedback.ConvertRobotMode().c_str()));
 
     ui->dbBoxJ1->setValue(m_Feedback.GetFeedbackData().QActual[0]);
@@ -371,40 +359,48 @@ void Form::ShowDataResult()
     ui->dbBoxB->setValue(m_Feedback.GetFeedbackData().ToolVectorActual[4]);
     ui->dbBoxC->setValue(m_Feedback.GetFeedbackData().ToolVectorActual[5]);
 
-    QString strValue = QString::number(m_Feedback.GetFeedbackData().DigitalInputs,2).rightJustified(64,'0');
+    QString strValue = QString::number(m_Feedback.GetFeedbackData().DigitalInputs, 2).rightJustified(64, '0');
     ui->labDI->setText(QString::asprintf("Digital Inputs:%s", strValue.toStdString().c_str()));
 
-    strValue = QString::number(m_Feedback.GetFeedbackData().DigitalOutputs,2).rightJustified(64,'0');
-    ui->labDO->setText(QString::asprintf("Digital Inputs:%s",strValue.toStdString().c_str()));
+    strValue = QString::number(m_Feedback.GetFeedbackData().DigitalOutputs, 2).rightJustified(64, '0');
+    ui->labDO->setText(QString::asprintf("Digital Inputs:%s", strValue.toStdString().c_str()));
 
     ParseWarn();
 }
 
 void Form::ParseWarn()
 {
-    if (m_Feedback.GetFeedbackData().RobotMode != 9) return;
+    if (m_Feedback.GetFeedbackData().RobotMode != 9)
+        return;
 
-    //strResult=ErrorID,{[[id,...,id], [id], [id], [id], [id], [id], [id]]},GetErrorID()
+    // strResult=ErrorID,{[[id,...,id], [id], [id], [id], [id], [id], [id]]},GetErrorID()
     std::string strResult = m_Dashboard.GetErrorID();
-    if (strResult.find("0")!=0) return;
+    if (strResult.find("0") != 0)
+        return;
 
-    //截取第一个{}内容
+    // 截取第一个{}内容
     size_t iBegPos = strResult.find('{');
-    if (iBegPos == std::string::npos) return;
+    if (iBegPos == std::string::npos)
+        return;
     size_t iEndPos = strResult.find('}', iBegPos + 1);
-    if (iEndPos <= iBegPos) return;
+    if (iEndPos <= iBegPos)
+        return;
     strResult = strResult.substr(iBegPos + 1, iEndPos - iBegPos - 1);
-    if (strResult.empty()) return;
+    if (strResult.empty())
+        return;
 
-    //剩余7组[]，第1组是控制器报警，其他6组是伺服报警
+    // 剩余7组[]，第1组是控制器报警，其他6组是伺服报警
     QString strShowTxt;
     QJsonDocument doc = QJsonDocument::fromJson(QByteArray(strResult.c_str(), strResult.size()));
-    do{
-        if (!doc.isArray()) break;
+    do
+    {
+        if (!doc.isArray())
+            break;
         QJsonArray arrWarn = doc.array();
         for (int i = 0; i < arrWarn.size(); ++i)
         {
-            if (!arrWarn[i].isArray()) continue;
+            if (!arrWarn[i].isArray())
+                continue;
 
             QJsonArray arr = arrWarn[i].toArray();
             for (int j = 0; j < arr.size(); ++j)
@@ -412,23 +408,23 @@ void Form::ParseWarn()
                 bool bFind = false;
                 CErrorInfoBean bean;
                 if (0 == i)
-                {//控制器报警
+                { // 控制器报警
                     bFind = CErrorInfoHelper::FindController(arr[j].toInt(), bean);
                 }
                 else
-                {//伺服报警
+                { // 伺服报警
                     bFind = CErrorInfoHelper::FindServo(arr[j].toInt(), bean);
                 }
                 if (bFind)
                 {
-                    strShowTxt.append(QString::asprintf("ID:%d\r\n",bean.id));
-                    strShowTxt.append(QString::asprintf("Type:%s\r\n",bean.Type.c_str()));
-                    strShowTxt.append(QString::asprintf("Level:%d\r\n",bean.level));
-                    strShowTxt.append(QString::asprintf("Solution:%s\r\n",bean.en.solution.c_str()));
+                    strShowTxt.append(QString::asprintf("ID:%d\r\n", bean.id));
+                    strShowTxt.append(QString::asprintf("Type:%s\r\n", bean.Type.c_str()));
+                    strShowTxt.append(QString::asprintf("Level:%d\r\n", bean.level));
+                    strShowTxt.append(QString::asprintf("Solution:%s\r\n", bean.en.solution.c_str()));
                 }
             }
         }
-    }while(false);
+    } while (false);
 
     if (!strShowTxt.isEmpty())
     {
@@ -439,7 +435,8 @@ void Form::ParseWarn()
             iLineCount = 0;
         }
         ++iLineCount;
-        QString strTime = QString("Time Stamp: ") + QDateTime::currentDateTime().toLocalTime().toString("yyyy-MM-dd HH:mm:ss");
+        QString strTime = QString("Time Stamp: ") + QDateTime::currentDateTime().toLocalTime().toString("yyyy-MM-dd "
+                                                                                                        "HH:mm:ss");
         ui->textEditErrorInfo->append(strTime);
         ui->textEditErrorInfo->append(strShowTxt);
     }
