@@ -132,7 +132,7 @@ std::string CDobotMove::Circle3(const CDescartesPoint& pt, const CDescartesPoint
 std::string CDobotMove::Sync()
 {
     std::string str = "Sync()";
-    return SendRecvMsg(str);
+    return SendRecvMsg(str,50000000);
 }
 
 std::string CDobotMove::RelMovJUser(const CDescartesPoint& pt, int User)
