@@ -230,11 +230,11 @@ std::string CDashboard::SetPayload(float load)
     return SendRecvMsg(str);
 };
 
-std::string CDashboard::PositiveSolution(const CDescartesPoint& pt, int User, int Tool)
+std::string CDashboard::PositiveSolution(const CJointPoint& pt, int User, int Tool)
 {
-    std::string str = "PositiveSolution(" + std::to_string(pt.x) + "," + std::to_string(pt.y) + "," +
-                      std::to_string(pt.z) + "," + std::to_string(pt.rx) + "," + std::to_string(pt.ry) + "," +
-                      std::to_string(pt.y) + "," + std::to_string(User) + "," + std::to_string(Tool) + ")";
+    std::string str = "PositiveSolution(" + std::to_string(pt.j1) + "," + std::to_string(pt.j2) + "," +
+                        std::to_string(pt.j3) + "," + std::to_string(pt.j4) + "," + std::to_string(pt.j5) + "," +
+                        std::to_string(pt.j6) + "," + std::to_string(User) + "," + std::to_string(Tool) + ")";
     return SendRecvMsg(str);
 };
 
@@ -242,7 +242,7 @@ std::string CDashboard::InverseSolution(const CDescartesPoint& pt, int User, int
 {
     std::string str = "InverseSolution(" + std::to_string(pt.x) + "," + std::to_string(pt.y) + "," +
                       std::to_string(pt.z) + "," + std::to_string(pt.rx) + "," + std::to_string(pt.ry) + "," +
-                      std::to_string(pt.y) + "," + std::to_string(User) + "," + std::to_string(Tool) + ")";
+                      std::to_string(pt.rz) + "," + std::to_string(User) + "," + std::to_string(Tool) + ")";
     return SendRecvMsg(str);
 };
 
