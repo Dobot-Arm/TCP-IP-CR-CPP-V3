@@ -104,8 +104,6 @@ public:
     std::string SetPayload(float load);
     std::string PositiveSolution(const CJointPoint& pt, int User, int Tool);
     std::string InverseSolution(const CDescartesPoint& pt, int User, int Tool);
-
-    template <typename... Args>
     std::string SetCollisionLevel(int level);
 
     std::string SetSafeSkin(int status);
