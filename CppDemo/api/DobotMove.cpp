@@ -65,7 +65,7 @@ std::string CDobotMove::MovL(const CDescartesPoint& pt)
 std::string CDobotMove::JointMovJ(const CJointPoint& pt)
 {
     std::ostringstream oss;
-    oss << "JointMovJ(" << pt.j1 << ',' << pt.j2 << ',' << pt.j3 << ',' << pt.j4 << ')';
+    oss << "JointMovJ(" << pt.j1 << ',' << pt.j2 << ',' << pt.j3 << ',' << pt.j4 << ',' << pt.j5 << ',' << pt.j6 <<')';
     std::string str = oss.str();
     return SendRecvMsg(str);
 }
