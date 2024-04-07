@@ -345,7 +345,7 @@ std::string CDashboard::GetPose(int user, int tool)
 
 std::string CDashboard::ModbusCreate(std::string ip, int port, int slave_id)
 {
-    std::string str = "ModbusCreate(" + std::string(ip) + "," + std::to_string(port) + std::to_string(slave_id) + ")";
+    std::string str = "ModbusCreate(" + std::string(ip) + "," + std::to_string(port) +"," std::to_string(slave_id) + ")";
     return SendRecvMsg(str);
 };
 
