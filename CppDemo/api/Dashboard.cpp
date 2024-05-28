@@ -37,7 +37,7 @@ std::string CDashboard::PowerOff()
 std::string CDashboard::EmergencyStop()
 {
     std::string str = "EmergencyStop()";
-    return SendRecvMsg(str, 15000);
+    return SendRecvMsg(str, 10000);
 }
 
 std::string CDashboard::EnableRobot()
