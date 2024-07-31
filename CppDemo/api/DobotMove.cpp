@@ -95,10 +95,10 @@ std::string CDobotMove::Arc(const CDescartesPoint& pt, const CDescartesPoint& pt
     return SendRecvMsg(str);
 }
 
-std::string CDobotMove::ServoJ(const CJointPoint& pt)
+std::string CDobotMove::ServoJ(const CJointPoint& pt, float t)
 {
     std::ostringstream oss;
-    oss << "ServoJ(" << pt.j1 << ',' << pt.j2 << ',' << pt.j3 << ',' << pt.j4 << ',' << pt.j5 << ',' << pt.j6 << ')';
+    oss << "ServoJ(" << pt.j1 << ',' << pt.j2 << ',' << pt.j3 << ',' << pt.j4 << ',' << pt.j5 << ',' << pt.j6 <<',' <<"t=" << t << ')';
     std::string str = oss.str();
     return SendRecvMsg(str);
 }
