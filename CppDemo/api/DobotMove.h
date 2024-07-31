@@ -71,7 +71,7 @@ public:
     template <typename... Args>
     std::string Arc(const CDescartesPoint& pt, const CDescartesPoint& pt2, Args... args);
 
-    std::string ServoJ(const CJointPoint& pt);
+    std::string ServoJ(const CJointPoint& pt,float t);
     template <typename... Args>
     std::string ServoJ(const CJointPoint& pt, Args... args);
 
