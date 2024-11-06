@@ -1,22 +1,33 @@
 #include "Form.h"
 
+#include <QPushButton>  // 其他Qt相关头文件
 #include <QTimer>
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QDateTime>
 #include <QDir>
+#include <QObject>  // 确保包含此文件
+
+#include <QString>
+
 
 #include "api/ErrorInfoHelper.h"
 
-Form::Form(QWidget *parent) : QWidget(parent), ui(new Ui::Form)
+Form::Form(QWidget *parent) :  QWidget(parent), ui(new Ui::Form)
 {
     ui->setupUi(this);
+
 
     CDobotClient::InitNet();
 
     m_pTimerReader = new QTimer(this);
     m_pTimerReader->setInterval(100);
     connect(m_pTimerReader, &QTimer::timeout, this, &Form::slotTimeoutReadFeedback);
+
+
+
+
+
 
     connect(this, &Form::signalPrintLog, this, [this](QString str)
             {
@@ -38,6 +49,10 @@ Form::Form(QWidget *parent) : QWidget(parent), ui(new Ui::Form)
             m_pTimerReader->start();
         else
             m_pTimerReader->stop(); });
+
+    connect(this, &Form::signalDisconnectComplete, this, [this]() {
+        qApp->quit();  // 退出应用程序
+    });
 
     connect(ui->btn6AxisJ1M, &QPushButton::pressed, this, &Form::slotOnBtnMoveJog);
     connect(ui->btn6AxisJ1M, &QPushButton::released, this, &Form::slotOnBtnStopMoveJog);
@@ -91,6 +106,7 @@ Form::Form(QWidget *parent) : QWidget(parent), ui(new Ui::Form)
     connect(ui->btn6AxisRZP, &QPushButton::pressed, this, &Form::slotOnBtnMoveJog);
     connect(ui->btn6AxisRZP, &QPushButton::released, this, &Form::slotOnBtnStopMoveJog);
 
+
     ui->boxDashboard->setEnabled(false);
     ui->boxMoveFunction->setEnabled(false);
     ui->boxFeedback->setEnabled(false);
@@ -112,6 +128,7 @@ void Form::PrintLog(QString strLog)
     emit signalPrintLog(strLog);
 }
 
+
 void Form::on_btnConnect_clicked()
 {
     if (ui->btnConnect->text().compare("Disconnect") == 0)
@@ -122,47 +139,80 @@ void Form::on_btnConnect_clicked()
     Connect();
 }
 
+// 修改 Connect 函数
 void Form::Connect()
 {
+    // 使用互斥锁来确保线程安全
+    std::lock_guard<std::mutex> lock(mtx);
+
+    if (isConnecting) return;  // 如果已经在连接过程中，则直接返回
+    isConnecting = true;  // 设置正在连接标志
+
     QString strIp = ui->lineEditIP->text();
     unsigned short iPortDashboard = ui->lineEditDashPort->text().toUShort();
     unsigned short iPortMove = ui->lineEditMovePort->text().toUShort();
     unsigned short iPortFeedback = ui->lineEditFeedbackPort->text().toUShort();
 
     PrintLog("Connecting...");
-    std::thread thd([=]
-                    {
+    std::thread thd([=] {
+        // 在工作线程中进行连接操作，但所有 UI 更新操作通过信号发送到主线程
+        bool connected = true;
+
         if (!m_Dashboard.Connect(strIp.toStdString(), iPortDashboard)) {
             PrintLog(QString::asprintf("Connect %s:%hu Fail!!", strIp.toStdString().c_str(), iPortDashboard));
-            return;
+            connected = false;
         }
         if (!m_DobotMove.Connect(strIp.toStdString(), iPortMove)) {
             PrintLog(QString::asprintf("Connect %s:%hu Fail!!", strIp.toStdString().c_str(), iPortMove));
-            return;
+            connected = false;
         }
         if (!m_Feedback.Connect(strIp.toStdString(), iPortFeedback)) {
             PrintLog(QString::asprintf("Connect %s:%hu Fail!!", strIp.toStdString().c_str(), iPortFeedback));
-            return;
+            connected = false;
         }
-        PrintLog("Connect Success!!!");
 
-        emit signalSetBtnText(ui->btnConnect, QString("Disconnect"));
-        emit signalConnectState(true); });
+        if (connected) {
+            PrintLog("Connect Success!!!");
+            emit signalSetBtnText(ui->btnConnect, QString("Disconnect"));
+            emit signalConnectState(true);
+        } else {
+            emit signalSetBtnText(ui->btnConnect, QString("Connect"));
+            emit signalConnectState(false);
+        }
+
+        isConnecting = false;  // 连接完成后恢复标志位
+    });
     thd.detach();
 }
 
+// 修改 Disconnect 函数
 void Form::Disconnect()
 {
-    std::thread thd([this]
-                    {
-        emit signalConnectState(false);
+    // 使用互斥锁来确保线程安全
+    std::lock_guard<std::mutex> lock(mtx);
+
+    if (isConnecting) return;  // 如果正在连接，则直接返回
+    isConnecting = true;  // 设置正在断开标志
+
+    std::thread thd([this] {
+        // 在工作线程中进行断开操作，但所有 UI 更新操作通过信号发送到主线程
         m_Feedback.Disconnect();
         m_DobotMove.Disconnect();
         m_Dashboard.Disconnect();
         PrintLog("Disconnect success!!!");
-        emit signalSetBtnText(ui->btnConnect, QString("Connect")); });
-    thd.detach();
+
+        emit signalSetBtnText(ui->btnConnect, QString("Connect"));
+        emit signalConnectState(false);
+
+        isConnecting = false;  // 断开完成后恢复标志位
+
+        // 通过信号通知主线程退出
+        emit signalDisconnectComplete();
+    });
+
+    thd.detach();  // 让工作线程独立执行，主线程不会阻塞
 }
+
 
 void Form::on_btnEnable_clicked()
 {
