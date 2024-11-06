@@ -15,6 +15,7 @@ QT_BEGIN_NAMESPACE
 namespace Ui { class Form; }
 QT_END_NAMESPACE
 
+
 class QTimer;
 
 class Form : public QWidget
@@ -29,6 +30,10 @@ signals:
     void signalConnectState(bool);
     void signalPrintLog(QString strLog);
     void signalSetBtnText(QPushButton* pBtn, QString strTxt);
+    // 新增的信号声明，便于在其他线程中更新UI
+    void signalSetBtnTextAndEnable(QPushButton* btn, const QString& text, bool enabled);\
+    void signalDisconnectComplete();
+
 
 private slots:
     void slotTimeoutReadFeedback();
@@ -54,6 +59,8 @@ private slots:
     void slotOnBtnMoveJog();
     void slotOnBtnStopMoveJog();
 
+
+
 private:
     void Connect();
     void Disconnect();
@@ -71,5 +78,11 @@ private:
     CFeedback m_Feedback;
     CDobotMove m_DobotMove;
     CDashboard m_Dashboard;
+
+    //添加
+    bool isConnecting = false;  // 防止重复连接
+    std::mutex mtx;  // 用于线程间的互斥锁，保证连接和断开互斥执行
+
+
 };
 #endif // FORM_H
