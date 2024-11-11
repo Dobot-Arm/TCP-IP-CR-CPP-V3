@@ -7,9 +7,9 @@
 #include <QDateTime>
 #include <QDir>
 #include <QObject>  // 确保包含此文件
-
+#include <atomic>
 #include <QString>
-
+#include <qthread>
 
 #include "api/ErrorInfoHelper.h"
 
@@ -50,9 +50,6 @@ Form::Form(QWidget *parent) :  QWidget(parent), ui(new Ui::Form)
         else
             m_pTimerReader->stop(); });
 
-    connect(this, &Form::signalDisconnectComplete, this, [this]() {
-        qApp->quit();  // 退出应用程序
-    });
 
     connect(ui->btn6AxisJ1M, &QPushButton::pressed, this, &Form::slotOnBtnMoveJog);
     connect(ui->btn6AxisJ1M, &QPushButton::released, this, &Form::slotOnBtnStopMoveJog);
@@ -139,14 +136,8 @@ void Form::on_btnConnect_clicked()
     Connect();
 }
 
-// 修改 Connect 函数
-void Form::Connect()
-{
-    // 使用互斥锁来确保线程安全
-    std::lock_guard<std::mutex> lock(mtx);
-
-    if (isConnecting) return;  // 如果已经在连接过程中，则直接返回
-    isConnecting = true;  // 设置正在连接标志
+void Form::Connect() {
+    if (isConnecting.exchange(true)) return;
 
     QString strIp = ui->lineEditIP->text();
     unsigned short iPortDashboard = ui->lineEditDashPort->text().toUShort();
@@ -154,64 +145,109 @@ void Form::Connect()
     unsigned short iPortFeedback = ui->lineEditFeedbackPort->text().toUShort();
 
     PrintLog("Connecting...");
-    std::thread thd([=] {
-        // 在工作线程中进行连接操作，但所有 UI 更新操作通过信号发送到主线程
-        bool connected = true;
 
-        if (!m_Dashboard.Connect(strIp.toStdString(), iPortDashboard)) {
-            PrintLog(QString::asprintf("Connect %s:%hu Fail!!", strIp.toStdString().c_str(), iPortDashboard));
-            connected = false;
+    // 使用 QThread 执行 ConnectTask
+    QThread *thread = QThread::create([=]() {
+        try {
+            ConnectTask(strIp, iPortDashboard, iPortMove, iPortFeedback);
+        } catch (const std::system_error &e) {
+            PrintLog(QString("System error in ConnectTask: %1").arg(e.what()));
+            QMetaObject::invokeMethod(this, [=]() {
+                emit signalSetBtnText(ui->btnConnect, QString("Connect"));
+                emit signalConnectState(false);
+                isConnecting = false;
+            }, Qt::QueuedConnection);
+        } catch (const std::exception &e) {
+            PrintLog(QString("Exception in ConnectTask: %1").arg(e.what()));
+            QMetaObject::invokeMethod(this, [=]() {
+                emit signalSetBtnText(ui->btnConnect, QString("Connect"));
+                emit signalConnectState(false);
+                isConnecting = false;
+            }, Qt::QueuedConnection);
+        } catch (...) {
+            PrintLog("Unknown error in ConnectTask");
+            QMetaObject::invokeMethod(this, [=]() {
+                emit signalSetBtnText(ui->btnConnect, QString("Connect"));
+                emit signalConnectState(false);
+                isConnecting = false;
+            }, Qt::QueuedConnection);
         }
-        if (!m_DobotMove.Connect(strIp.toStdString(), iPortMove)) {
-            PrintLog(QString::asprintf("Connect %s:%hu Fail!!", strIp.toStdString().c_str(), iPortMove));
-            connected = false;
-        }
-        if (!m_Feedback.Connect(strIp.toStdString(), iPortFeedback)) {
-            PrintLog(QString::asprintf("Connect %s:%hu Fail!!", strIp.toStdString().c_str(), iPortFeedback));
-            connected = false;
-        }
+    });
 
+    connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+    thread->start();
+}
+
+void Form::ConnectTask(QString strIp, unsigned short iPortDashboard, unsigned short iPortMove, unsigned short iPortFeedback) {
+    bool connected = true;
+    if (!m_Dashboard.Connect(strIp.toStdString(), iPortDashboard)) {
+        PrintLog("Connect Dashboard Fail");
+        connected = false;
+    }
+    if (!m_DobotMove.Connect(strIp.toStdString(), iPortMove)) {
+        PrintLog("Connect Move Fail");
+        connected = false;
+    }
+    if (!m_Feedback.Connect(strIp.toStdString(), iPortFeedback)) {
+        PrintLog("Connect Feedback Fail");
+        connected = false;
+    }
+
+    QMetaObject::invokeMethod(this, [=]() {
         if (connected) {
-            PrintLog("Connect Success!!!");
             emit signalSetBtnText(ui->btnConnect, QString("Disconnect"));
             emit signalConnectState(true);
         } else {
             emit signalSetBtnText(ui->btnConnect, QString("Connect"));
             emit signalConnectState(false);
         }
-
-        isConnecting = false;  // 连接完成后恢复标志位
-    });
-    thd.detach();
+        isConnecting = false;
+    }, Qt::QueuedConnection);
 }
 
-// 修改 Disconnect 函数
-void Form::Disconnect()
-{
-    // 使用互斥锁来确保线程安全
-    std::lock_guard<std::mutex> lock(mtx);
+void Form::Disconnect() {
+    if (isConnecting.exchange(true)) return;
 
-    if (isConnecting) return;  // 如果正在连接，则直接返回
-    isConnecting = true;  // 设置正在断开标志
+    QThread *thread = QThread::create([=]() {
+        try {
+            m_Feedback.Disconnect();
+            m_DobotMove.Disconnect();
+            m_Dashboard.Disconnect();
+            PrintLog("Disconnected");
 
-    std::thread thd([this] {
-        // 在工作线程中进行断开操作，但所有 UI 更新操作通过信号发送到主线程
-        m_Feedback.Disconnect();
-        m_DobotMove.Disconnect();
-        m_Dashboard.Disconnect();
-        PrintLog("Disconnect success!!!");
-
-        emit signalSetBtnText(ui->btnConnect, QString("Connect"));
-        emit signalConnectState(false);
-
-        isConnecting = false;  // 断开完成后恢复标志位
-
-        // 通过信号通知主线程退出
-        emit signalDisconnectComplete();
+            QMetaObject::invokeMethod(this, [=]() {
+                emit signalSetBtnText(ui->btnConnect, QString("Connect"));
+                emit signalConnectState(false);
+                isConnecting = false;
+            }, Qt::QueuedConnection);
+        } catch (const std::system_error &e) {
+            PrintLog(QString("System error in Disconnect: %1").arg(e.what()));
+            QMetaObject::invokeMethod(this, [=]() {
+                emit signalSetBtnText(ui->btnConnect, QString("Connect"));
+                emit signalConnectState(false);
+                isConnecting = false;
+            }, Qt::QueuedConnection);
+        } catch (const std::exception &e) {
+            PrintLog(QString("Exception in Disconnect: %1").arg(e.what()));
+            QMetaObject::invokeMethod(this, [=]() {
+                emit signalSetBtnText(ui->btnConnect, QString("Connect"));
+                emit signalConnectState(false);
+                isConnecting = false;
+            }, Qt::QueuedConnection);
+        } catch (...) {
+            PrintLog("Unknown error in Disconnect");
+            QMetaObject::invokeMethod(this, [=]() {
+                emit signalSetBtnText(ui->btnConnect, QString("Connect"));
+                emit signalConnectState(false);
+                isConnecting = false;
+            }, Qt::QueuedConnection);
+        }
     });
 
-    thd.detach();  // 让工作线程独立执行，主线程不会阻塞
+    connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+    thread->start();
 }
+
 
 
 void Form::on_btnEnable_clicked()
