@@ -2,6 +2,7 @@
 #define FORM_H
 
 #include <QMainWindow>
+#include <atomic>
 
 #include "ui_Form.h"
 
@@ -64,6 +65,7 @@ private slots:
 private:
     void Connect();
     void Disconnect();
+    void ConnectTask(QString strIp, unsigned short iPortDashboard, unsigned short iPortMove, unsigned short iPortFeedback);
 
     void PrintLog(QString strLog);
     void DoMoveJog(QString str);
@@ -80,8 +82,7 @@ private:
     CDashboard m_Dashboard;
 
     //添加
-    bool isConnecting = false;  // 防止重复连接
-    std::mutex mtx;  // 用于线程间的互斥锁，保证连接和断开互斥执行
+    std::atomic<bool> isConnecting{false};
 
 
 };
