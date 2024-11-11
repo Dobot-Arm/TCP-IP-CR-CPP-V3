@@ -41,11 +41,15 @@ namespace Dobot
 
     private:
         void Run();
+        void ForceRefreshData();
         std::thread m_thd;
-        std::atomic<bool> m_isRunning;
-        std::atomic<bool> m_shouldRun;
+        std::atomic<bool> m_isRunning;      // 控制数据接收标志位
+        std::atomic<bool> m_shouldRun;      // 控制线程的生命周期
+        bool m_forceRefresh{false};         // 标识是否需要刷新数据
+
         std::mutex m_mutex2;
         std::mutex m_mutex3;
+        std::mutex m_mutex4;
         bool m_IsDataHasRead = false;
         std::condition_variable m_condVar;
 
