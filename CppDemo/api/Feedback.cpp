@@ -8,25 +8,47 @@
 namespace Dobot
 {
     CFeedback::CFeedback() {}
-    CFeedback::~CFeedback() {}
-
-    void CFeedback::OnConnected()
-    {
-        if (m_thd.joinable())
-        {
-            m_thd.join();
-        }
-        std::thread thd([this] {
-            OnRecvData();
-        });
-        m_thd.swap(thd);
+    CFeedback::~CFeedback() {
+        OnDisconnected();
     }
 
-    void CFeedback::OnDisconnected()
-    {
-        if (m_thd.joinable())
+
+
+    void CFeedback::OnConnected() {
         {
-            m_thd.join();
+            std::lock_guard<std::mutex> lock(m_mutex3);
+            m_shouldRun = true;  // 设置数据接收标志
+            if (!m_isRunning) {  // 如果线程还未启动，启动它
+                m_isRunning = true;
+                std::thread(&CFeedback::Run, this).detach();  // 启动并分离线程
+            }
+        }
+        m_condVar.notify_one();  // 唤醒等待的线程
+    }
+
+    void CFeedback::OnDisconnected() {
+        {
+            std::lock_guard<std::mutex> lock(m_mutex3);
+            m_shouldRun = false;  // 停止数据接收
+            m_isRunning = false;  // 停止线程运行
+        }
+        m_condVar.notify_one();  // 唤醒线程以便退出
+    }
+
+    void CFeedback::Run() {
+        std::unique_lock<std::mutex> lock(m_mutex3);
+        while (m_isRunning) {  // 循环直到 m_isRunning 被置为 false
+            m_condVar.wait(lock, [this]() { return m_shouldRun || !m_isRunning; });
+
+            if (!m_isRunning) {
+                break;  // 如果线程不再需要运行，退出循环
+            }
+
+            if (m_shouldRun) {
+                lock.unlock();  // 解锁后再进行数据接收，防止阻塞其他操作
+                OnRecvData();
+                lock.lock();  // 重新加锁
+            }
         }
     }
 
@@ -37,7 +59,7 @@ namespace Dobot
     
     void CFeedback::OnRecvData()
     {
-        constexpr int BUFFERSIZE = 4320;//1440*3
+        constexpr int BUFFERSIZE = 96000;//1440*3
         char buffer[BUFFERSIZE] = {0};
         int iHasRead = 0;
         while (IsConnected())
@@ -45,6 +67,7 @@ namespace Dobot
             int iRet = Receive(buffer+ iHasRead, BUFFERSIZE - iHasRead);
             if (iRet <= 0)
             {
+                if (!IsConnected()) break; // 如果断开连接，退出循环
                 continue;
             }
             iHasRead += iRet;
@@ -87,14 +110,17 @@ namespace Dobot
             }
             iHasRead = iHasRead - 1440;
             //按照协议的格式解析数据
-            ParseData(buffer);
+            ParseData(buffer,iHasRead);
             memmove(buffer, buffer + 1440, BUFFERSIZE - 1440);
         }
     }
 
-    void CFeedback::ParseData(char* pBuffer)
+    void CFeedback::ParseData(char* pBuffer,int bufferLength)
     {
+        std::lock_guard<std::mutex> lock(m_mutex2); // 添加锁保护 m_feedbackData
         int iStartIndex = 0;
+
+        if (bufferLength < 1440) return; // 确保长度足够
 
         m_feedbackData.MessageSize = CBitConverter::ToUShort(pBuffer + iStartIndex);
         iStartIndex += 2;
