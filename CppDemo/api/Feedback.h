@@ -4,6 +4,7 @@
 
 #include "DobotClient.h"
 #include "FeedbackData.h"
+#include <condition_variable>
 
 namespace Dobot
 {
@@ -36,11 +37,17 @@ namespace Dobot
         /// 解析数据
         /// </summary>
         /// <param name="buffer">一包完整的数据</param>
-        void ParseData(char* pBuffer);
+        void ParseData(char* pBuffer,int bufferLength);
 
     private:
+        void Run();
         std::thread m_thd;
+        std::atomic<bool> m_isRunning;
+        std::atomic<bool> m_shouldRun;
+        std::mutex m_mutex2;
+        std::mutex m_mutex3;
         bool m_IsDataHasRead = false;
+        std::condition_variable m_condVar;
 
         CFeedbackData m_feedbackData;
     };
