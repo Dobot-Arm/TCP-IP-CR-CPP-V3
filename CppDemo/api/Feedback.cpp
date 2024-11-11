@@ -20,6 +20,7 @@ namespace Dobot
             m_shouldRun = true;  // 设置数据接收标志
             if (!m_isRunning) {  // 如果线程还未启动，启动它
                 m_isRunning = true;
+                m_forceRefresh = true; // 标记数据需要刷新
                 std::thread(&CFeedback::Run, this).detach();  // 启动并分离线程
             }
         }
@@ -31,8 +32,17 @@ namespace Dobot
             std::lock_guard<std::mutex> lock(m_mutex3);
             m_shouldRun = false;  // 停止数据接收
             m_isRunning = false;  // 停止线程运行
+            m_forceRefresh = true;
         }
         m_condVar.notify_one();  // 唤醒线程以便退出
+    }
+
+    void CFeedback::ForceRefreshData() {
+        {
+            std::lock_guard<std::mutex> lock(m_mutex4);
+            m_forceRefresh = true; // 标记数据需要刷新
+        }
+        m_condVar.notify_one(); // 让线程立即刷新
     }
 
     void CFeedback::Run() {
@@ -48,6 +58,7 @@ namespace Dobot
                 lock.unlock();  // 解锁后再进行数据接收，防止阻塞其他操作
                 OnRecvData();
                 lock.lock();  // 重新加锁
+                m_forceRefresh = false; // 清除刷新标记
             }
         }
     }
