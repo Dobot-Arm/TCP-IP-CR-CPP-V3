@@ -20,48 +20,49 @@ namespace Dobot
         m_shouldRun.store(true);  // 设置数据接收标志
         if (!m_isRunning.load()) {  // 如果线程还未启动，启动它
             m_isRunning.store(true);
-            m_forceRefresh.store(true); // 标记数据需要刷新
+            m_forceRefresh = true; // 标记数据需要刷新
             std::thread(&CFeedback::Run, this).detach();  // 启动并分离线程
         }
     }
     m_condVar.notify_one();  // 唤醒等待的线程
     }
-    
+
     void CFeedback::OnDisconnected() {
         {
             std::lock_guard<std::mutex> lock(m_mutex3);
             m_shouldRun.store(false);  // 停止数据接收
             m_isRunning.store(false);  // 停止线程运行
-            m_forceRefresh.store(true); // 标记数据需要刷新
+            m_forceRefresh = true; // 标记数据需要刷新
         }
         m_condVar.notify_one();  // 唤醒线程以便退出
     }
-    
+
     void CFeedback::ForceRefreshData() {
         {
             std::lock_guard<std::mutex> lock(m_mutex4);
-            m_forceRefresh.store(true); // 标记数据需要刷新
+            m_forceRefresh = true; // 标记数据需要刷新
         }
         m_condVar.notify_one(); // 让线程立即刷新
     }
-    
+
     void CFeedback::Run() {
         std::unique_lock<std::mutex> lock(m_mutex3);
         while (m_isRunning.load()) {  // 循环直到 m_isRunning 被置为 false
             m_condVar.wait(lock, [this]() { return m_shouldRun.load() || !m_isRunning.load(); });
-    
+
             if (!m_isRunning.load()) {
                 break;  // 如果线程不再需要运行，退出循环
             }
-    
+
             if (m_shouldRun.load()) {
                 lock.unlock();  // 解锁后再进行数据接收，防止阻塞其他操作
                 OnRecvData();
                 lock.lock();  // 重新加锁
-                m_forceRefresh.store(false); // 清除刷新标记
+                m_forceRefresh = false; // 清除刷新标记
             }
         }
     }
+
 
     const CFeedbackData& CFeedback::GetFeedbackData() const
     {
