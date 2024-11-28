@@ -37,18 +37,13 @@ TCP-IP-CR-CPP contains
 |:----------:|:----------:|
 | V1.0.0.0| 2024-03-07 |
 
-# 2\. Technical support
 
-If you have any questions or suggestions, you can contact Dobot's technical support:
 
-* Send an email to futingxing@dobot-robots.com with a detailed description of the problem you are experiencing and the scenario in which you are using it.
-* Send an email to wuyongfeng@dobot-robots.com with a detailed description of the problem you are experiencing and the scenario in which you are using it.
-
-# 3\. TCP-IP-CR-CPP control protocol
+# 2\. TCP-IP-CR-CPP control protocol
 
 As the communication based on TCP/IP has high reliability, strong practicability and high performance with low cost, many industrial automation projects have a wide demand for controlling robots based on TCP/IP protocol. Therefore, the CR robot is designed to provide rich interfaces for interaction with external devices based on the TCP/IP protocol. For more details, see [TCP_IP Remote Control Interface Guide](https://github.com/Dobot-Arm/TCP-IP-Protocol-6AXis-V3).
 
-## 4\. Obtaining and establishing TCP-IP-CR-CPP
+## 3\. Obtaining and establishing TCP-IP-CR-CPP
 
 1. Obtain the secondary development API program of Dobot TCP-IP-CR-CPP from Dobot GitHub.
   
@@ -60,7 +55,7 @@ As the communication based on TCP/IP has high reliability, strong practicability
 
  
 
-## 5\. File and class descriptions
+## 4\. File and class descriptions
 
 1. The API directory contains various classes that encapsulate the related functions of CR, which are written based on C++.
 
@@ -133,7 +128,7 @@ Derived from DobotClient, it implements the specific feedback services of the ro
 
 **For details, see the PythonExample.py and the Demo example.**
 
-# 6\. Common problem
+# 5\. Common problem
 
 **Problem 1:**  TCP connection. Port 29999/30003 cannot be connected or cannot deliver commands after connecting.
 
@@ -149,7 +144,7 @@ Derived from DobotClient, it implements the specific feedback services of the ro
 
 ​                   It can be judged by comparing the Cartesian coordinates of the target point with the actual Cartesian coordinates of the robot.
 
-# 7\. Example
+# 6\. Example
 
 * Dobot-Demo realizes TCP control of the robot and other interactions. It connects to the control port, motion port, and feedback port of the robot respectively. It delivers motion commands to robot, and handles the abnormal status of the robot, etc.
 
