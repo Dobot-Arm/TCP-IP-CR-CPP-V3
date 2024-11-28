@@ -39,25 +39,15 @@ typora-root-url: ./picture
   | v1.0.0.0 | 2023-11-20 |
 
   
-
-  # 2. 技术支持
-
-  在使用过程中如遇问题或者一些建议， 您可以通过以下方式获取dobot的技术支持 :
-
-  * 发送邮件到 futingxing@dobot-robots.com，详细描述您遇到的问题和使用场景
-  * 发送邮件到 wuyongfeng@dobot-robots.com ，详细描述您遇到的问题和使用场景
-
   
 
-  
-
-  # 3. TCP-IP-CR-CPP 控制协议
+  # 2. TCP-IP-CR-CPP 控制协议
 
   由于基于TCP/IP的通讯具有成本低、可靠性高、实用性强、性能高等特点；许多工业自动化项目对支持TCP/IP协议控制机器人需求广泛，因此 CR 机器人将设计在TCP/IP协议的基础上，提供了丰富的接口用于与外部设备的交互；有关协议更详细的信息请查阅**[《越疆TCPIP控制协议文档6AXis-V3](https://github.com/Dobot-Arm/TCP-IP-Protocol-6AXis-V3)》**
 
   
 
-  ## 4. 获取并构建TCP-IP-CR-CPP
+  ## 3. 获取并构建TCP-IP-CR-CPP
 
   1. 从dobot  GitHub 获取越疆Dobot  TCP-IP-CR-CPP二次开发api程序
 
@@ -69,7 +59,7 @@ typora-root-url: ./picture
 
   &ensp;
 
-  ## 5. 文件以及类的说明
+  ## 4. 文件以及类的说明
 
   1. api目录包含了CR的相关功能封装的各个类，基于c++编写的。
 
@@ -147,7 +137,7 @@ typora-root-url: ./picture
 
   
 
-  # 6. 常见问题
+  # 5. 常见问题
 
   问题一：  Tcp连接  29999/30003端口无法连接或者连接后无法下发指令
 
@@ -169,7 +159,7 @@ typora-root-url: ./picture
 
   
 
-  # 7. 示例
+  # 6. 示例
 
   * Dobot-Demo 实现Tcp对机器的控制等交互，分别对控制端口，运动端口，反馈端口进行tcp连接，通过机器运动指令完成状态来进行下发指令，且对机器异常状态进行处理等功能。
 
