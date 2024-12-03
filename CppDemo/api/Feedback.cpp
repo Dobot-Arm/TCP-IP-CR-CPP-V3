@@ -120,9 +120,9 @@ namespace Dobot
             {
                 continue;
             }
-            iHasRead = iHasRead - 1440;
             //按照协议的格式解析数据
             ParseData(buffer,iHasRead);
+            iHasRead = iHasRead - 1440;
             memmove(buffer, buffer + 1440, BUFFERSIZE - 1440);
         }
     }
