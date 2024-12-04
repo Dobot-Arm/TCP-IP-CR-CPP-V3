@@ -84,8 +84,8 @@ public:
     std::string DOExecute(int index, int status);
     std::string ToolDO(int index, int status);
     std::string ToolDOExecute(int index, int status);
-    std::string AO(int index, int status);
-    std::string AOExecute(int index, int status);
+    std::string AO(int index, double status);
+    std::string AOExecute(int index, double status);
     std::string AccJ(int Rprecent);
     std::string AccL(int Rprecent);
 
