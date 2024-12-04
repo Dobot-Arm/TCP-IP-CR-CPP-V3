@@ -486,7 +486,7 @@ namespace Dobot
         case 2:
             return "ROBOT_MODE_BRAKE_OPEN";
         case 3:
-            return "ROBOT_RESERVED";
+            return "ROBOT_MODE_POWER_STATUS";
         case 4:
             return "ROBOT_MODE_DISABLED";
         case 5:
