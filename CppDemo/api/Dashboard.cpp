@@ -133,13 +133,13 @@ std::string CDashboard::ToolDOExecute(int index, int status)
     return SendRecvMsg(str);
 };
 
-std::string CDashboard::AO(int index, int status)
+std::string CDashboard::AO(int index, double status)
 {
     std::string str = "AO(" + std::to_string(index) + "," + std::to_string(status) + ")";
     return SendRecvMsg(str);
 };
 
-std::string CDashboard::AOExecute(int index, int status)
+std::string CDashboard::AOExecute(int index, double status)
 {
     std::string str = "AOExecute(" + std::to_string(index) + "," + std::to_string(status) + ")";
     return SendRecvMsg(str);
