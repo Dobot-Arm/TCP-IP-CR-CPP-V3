@@ -111,13 +111,6 @@ std::string CDobotMove::ServoP(const CDescartesPoint& pt)
     return SendRecvMsg(str);
 }
 
-std::string CDobotMove::ServoJS(const CJointPoint& pt)
-{
-    std::ostringstream oss;
-    oss << "ServoJS(" << pt.j1 << ',' << pt.j2 << ',' << pt.j3 << ',' << pt.j4 << ',' << pt.j5 << ',' << pt.j6 << ')';
-    std::string str = oss.str();
-    return SendRecvMsg(str);
-}
 
 std::string CDobotMove::Circle3(const CDescartesPoint& pt, const CDescartesPoint& pt2, int count)
 {
