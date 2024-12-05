@@ -75,7 +75,6 @@ public:
     template <typename... Args>
     std::string ServoJ(const CJointPoint& pt, Args... args);
 
-    std::string ServoJS(const CJointPoint& pt);
     std::string ServoP(const CDescartesPoint& pt);
 
     std::string Circle3(const CDescartesPoint& pt, const CDescartesPoint& pt2, int count);
