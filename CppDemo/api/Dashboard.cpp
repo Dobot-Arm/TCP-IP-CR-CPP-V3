@@ -133,13 +133,13 @@ std::string CDashboard::ToolDOExecute(int index, int status)
     return SendRecvMsg(str);
 };
 
-std::string CDashboard::AO(int index, double status)
+std::string CDashboard::AO(int index, int status)
 {
     std::string str = "AO(" + std::to_string(index) + "," + std::to_string(status) + ")";
     return SendRecvMsg(str);
 };
 
-std::string CDashboard::AOExecute(int index, double status)
+std::string CDashboard::AOExecute(int index, int status)
 {
     std::string str = "AOExecute(" + std::to_string(index) + "," + std::to_string(status) + ")";
     return SendRecvMsg(str);
@@ -491,4 +491,37 @@ std::string CDashboard::LoadSwitch(int status)
     std::string str = "LoadSwitch(" + std::to_string(status) + ")";
     return SendRecvMsg(str);
 };
+
+std::string CDashboard::Pause()
+{
+    std::ostringstream oss;
+    std::string str = "Pause()";
+    return SendRecvMsg(str);
+};
+
+std::string CDashboard::Continue()
+{
+    std::ostringstream oss;
+    std::string str = "Continue()";
+    return SendRecvMsg(str);
+};
+
+
+std::string CDashboard::SetTool(int index,const CDescartesPoint& table)
+{
+    std::string str = "SetTool("  + std::to_string(index) + std::to_string(table.x) + "," + std::to_string(table.y) + "," +
+                      std::to_string(table.z) + "," + std::to_string(table.rx) + "," + std::to_string(table.ry) + "," +
+                      std::to_string(table.rz)  + ")";
+    return SendRecvMsg(str);
+};
+
+
+std::string CDashboard::CalcTool(int index,int matrix_direction,const CDescartesPoint& table)
+{
+    std::string str = "CalcTool(" + std::to_string(index) + "," + std::to_string(index) + "," +std::to_string(table.x) + "," + std::to_string(table.y) + "," +
+                      std::to_string(table.z) + "," + std::to_string(table.rx) + "," + std::to_string(table.ry) + "," +
+                      std::to_string(table.rz)  + ")";
+    return SendRecvMsg(str);
+};
+
 }    // namespace Dobot
