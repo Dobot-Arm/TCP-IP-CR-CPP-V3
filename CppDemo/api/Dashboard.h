@@ -84,8 +84,8 @@ public:
     std::string DOExecute(int index, int status);
     std::string ToolDO(int index, int status);
     std::string ToolDOExecute(int index, int status);
-    std::string AO(int index, double status);
-    std::string AOExecute(int index, double status);
+    std::string AO(int index, int status);
+    std::string AOExecute(int index, int status);
     std::string AccJ(int Rprecent);
     std::string AccL(int Rprecent);
 
@@ -127,6 +127,10 @@ public:
     std::string ModbusCreate(std::string ip, int port, int slave_id, int isRTU);    //  重载可选参数
 
     std::string ModbusClose(int index);
+
+    std::string SetTool(int index,const CDescartesPoint& table);
+    std::string CalcTool(int index,int matrix_direction,const CDescartesPoint& table);
+
     std::string GetInBits(int index, int addr, int count);
 
     std::string GetInRegs(int index, int addr, int count);
@@ -156,6 +160,9 @@ public:
     std::string StartDrag();
     std::string StopDrag();
     std::string LoadSwitch(int status);
+
+    std::string Pause();
+    std::string Continue();
 
 protected:
     void OnConnected() override;
